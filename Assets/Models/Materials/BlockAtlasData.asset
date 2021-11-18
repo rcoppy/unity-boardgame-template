@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f83ada20a88b264cb06a0ad1b0f8ec4, type: 3}
+  m_Name: BlockAtlasData
+  m_EditorClassIdentifier: 
+  _atlasFile: {fileID: 4900000, guid: 2af1b3f49712d7a40a1c7811d95295fd, type: 3}
+  _tileUVCoords:
+  - _name: Floor
+    _start: {x: 0, y: 0.875}
+    _end: {x: 0.125, y: 0.75}
+  - _name: Numb_0
+    _start: {x: 0.125, y: 0.875}
+    _end: {x: 0.25, y: 0.75}
+  - _name: Numb_1
+    _start: {x: 0.25, y: 0.875}
+    _end: {x: 0.375, y: 0.75}
+  - _name: Numb_2
+    _start: {x: 0.375, y: 0.875}
+    _end: {x: 0.5, y: 0.75}
+  - _name: Numb_3
+    _start: {x: 0.5, y: 0.875}
+    _end: {x: 0.625, y: 0.75}
+  - _name: Numb_4
+    _start: {x: 0.625, y: 0.875}
+    _end: {x: 0.75, y: 0.75}
+  - _name: Numb_5
+    _start: {x: 0.75, y: 0.875}
+    _end: {x: 0.875, y: 0.75}
+  - _name: Numb_6
+    _start: {x: 0.875, y: 0.875}
+    _end: {x: 1, y: 0.75}
+  - _name: Numb_7
+    _start: {x: 0, y: 0.75}
+    _end: {x: 0.125, y: 0.625}
+  - _name: Numb_8
+    _start: {x: 0, y: 0.625}
+    _end: {x: 0.125, y: 0.5}
+  - _name: Numb_9
+    _start: {x: 0, y: 0.5}
+    _end: {x: 0.125, y: 0.375}
+  - _name: Screen
+    _start: {x: 0, y: 0.375}
+    _end: {x: 0.125, y: 0.25}
+  - _name: Symbol_Divide
+    _start: {x: 0, y: 0.25}
+    _end: {x: 0.125, y: 0.125}
+  - _name: Symbol_Minus
+    _start: {x: 0, y: 0.125}
+    _end: {x: 0.125, y: 0}
+  - _name: Symbol_Plus
+    _start: {x: 0, y: 0}
+    _end: {x: 0.125, y: -0.125}
+  - _name: Symbol_Times
+    _start: {x: 0.125, y: 0.75}
+    _end: {x: 0.25, y: 0.625}
+  - _name: Tile
+    _start: {x: 0.25, y: 0.75}
+    _end: {x: 0.375, y: 0.625}
+  - _name: Wall
+    _start: {x: 0.375, y: 0.75}
+    _end: {x: 0.5, y: 0.625}

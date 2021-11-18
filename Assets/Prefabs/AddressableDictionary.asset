@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58100df49d722194eb2014be52fae0da, type: 3}
+  m_Name: AddressableDictionary
+  m_EditorClassIdentifier: 
+  _references:
+  - _name: Block
+    _prefab: {fileID: 5333631476790120719, guid: c00128fcb127cd3499a4aa5eb86f870c, type: 3}
+  - _name: Hazard
+    _prefab: {fileID: 410892548460611190, guid: 6f9c63ec6e75be24491473f4afa2c567, type: 3}
+  - _name: Player
+    _prefab: {fileID: 988671532478941959, guid: 35a6d02e8b914714b8ca9d5ff6056ea8, type: 3}
+  - _name: Grass
+    _prefab: {fileID: 6371624907252301034, guid: 7b4ae57c04af531468b61087fa9ebf72, type: 3}
+  - _name: NumberBlock
+    _prefab: {fileID: 9160830462487179506, guid: 6e7c6ef6aab83d6408af9fa138de0f5e, type: 3}
+  - _name: Tree
+    _prefab: {fileID: 5333631476790120719, guid: 66cbbd8c40e954549b84dc0a306bff00, type: 3}
