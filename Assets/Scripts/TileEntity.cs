@@ -5,21 +5,22 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections;
 using UnityEngine;
+using System.Runtime.InteropServices;
 
 namespace Alex.BoardGame
 {
     
-
+    [ExecuteAlways]
     public class TileEntity : MonoBehaviour
     {
-        public delegate void Despawn();
+        public delegate void Despawn(TileEntity tile);
         public Despawn OnDespawn; 
 
         public enum EntityType { 
             Player,         // responds to user input
             Interactable,   // can be modified by player tiles
-            Hazard,          // may or may not be static but can't be modified by player tiles
-            Environment
+            Hazard,         // may or may not be static but can't be modified by player tiles
+            Environment     // always static; is a non-dangerous obstruction
         }
 
         [SerializeField]
@@ -40,7 +41,6 @@ namespace Alex.BoardGame
 
         public bool IsAlive { get { return _isAlive; } }
 
-        [SerializeField]
         Vector2Int _boardPosition; 
 
         Vector3 _targetWorldPosition;
@@ -108,7 +108,23 @@ namespace Alex.BoardGame
 
         void OnDestroy()
         {
-            OnDespawn.Invoke();
+            // FYI make sure you don't confuse destroying a tile component
+            // with destroying the whole game object it's attached to 
+
+            if (this != null && OnDespawn != null)
+            {
+                try
+                {
+                    OnDespawn(this);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"'this' was equal to {this}");
+                    Debug.LogWarning($"'OnDespawn' was equal to {OnDespawn}"); 
+
+                    Debug.LogError(e);
+                }
+            }
         }
 
     }

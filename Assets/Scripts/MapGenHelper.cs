@@ -8,6 +8,7 @@ using static Alex.BoardGame.AddressableDictionary;
 
 namespace Alex.BoardGame
 {
+    [ExecuteAlways]
     public class MapGenHelper : MonoBehaviour
     {
         [SerializeField]
@@ -25,6 +26,23 @@ namespace Alex.BoardGame
         [SerializeField]
         TextAsset _mapFile;
 
+        // for tracking _mapFile state in inspector
+        TextAsset _lastFile; 
+
+        public TextAsset MapFile
+        {
+            get { return _mapFile; }
+            set
+            {
+                _lastFile = _mapFile; 
+                _mapFile = value;
+                OnMapFileChanged(); 
+            }
+        }
+
+        public delegate void MapFileChange();
+        public MapFileChange OnMapFileChanged;
+
         Vector2Int _mapBounds;
 
         public Vector2Int MapBounds
@@ -34,7 +52,7 @@ namespace Alex.BoardGame
 
         List<(Vector2Int, GameObject)> _spawnGrid; 
 
-        public List<(Vector2Int, GameObject)> SpawnGrid
+        public List<(Vector2Int Position, GameObject Tile)> SpawnGrid
         {
             get { return _spawnGrid; }
         }
@@ -83,76 +101,104 @@ namespace Alex.BoardGame
         }
 
         // callable from the board
-        public void TriggerOnValidate()
+        // in fact this helper should *only* be initialized via the gameboard
+        public void TriggerInitGenHelper()
         {
-            OnValidate();
+            InitGenHelper();
         }
 
-        void OnValidate()
+        /*private void OnValidate()
+        {
+            InitGenHelper(); 
+        }*/
+
+        void InitGenHelper()
         {
             InitCharMap();
             ReadMapFile(); 
         }
 
-        void OnEnable()
-        {
-            OnValidate(); 
-        }
-
         void ReadMapFile()
         {
-            int totalCount = 0;
-            int lineCount = 0;
-
-            int rowCount = 0;
-
-            _spawnGrid = new List<(Vector2Int, GameObject)>();
-
-            foreach (char c in _mapFile.text.Trim())
+            try
             {
-                if (string.IsNullOrWhiteSpace("" + c))
+                int totalCount = 0;
+                int lineCount = 0;
+
+                int rowCount = 0;
+
+                _spawnGrid = new List<(Vector2Int, GameObject)>();
+
+                foreach (char c in _mapFile.text.Trim())
                 {
-                    // certain null characters result in double count?
-                    // double-check explicitly for newline
-
-                    if (c == '\n')
+                    if (string.IsNullOrWhiteSpace("" + c))
                     {
-                        rowCount = 0;
-                        lineCount++;
+                        // certain null characters result in double count?
+                        // double-check explicitly for newline
 
-                        // Debug.Log($"increment on character {c}; total: {totalCount}; linecount: {lineCount}");
+                        if (c == '\n')
+                        {
+                            rowCount = 0;
+                            lineCount++;
+
+                            // Debug.Log($"increment on character {c}; total: {totalCount}; linecount: {lineCount}");
+                        }
                     }
+                    else
+                    {
+                        // Debug.Log($"adding at {rowCount}, {lineCount}");
+
+                        Vector2Int coord = new Vector2Int(rowCount, lineCount);
+                        (Vector2Int, GameObject) pair;
+
+                        if (!_charMap.ContainsKey(c))
+                        {
+                            pair = (coord, null);
+                        }
+                        else
+                        {
+                            pair = (coord, _charMap[c].Prefab);
+                        }
+
+                        _spawnGrid.Add(pair);
+
+                        rowCount++;
+                        totalCount++;
+                    }
+                }
+
+                // last line won't have a trailing whitespace
+                // so manually increment
+                lineCount++;
+
+                int rowWidth = totalCount / (lineCount);
+
+                // Debug.Log($"calc: {rowWidth} x {lineCount}; total: {totalCount}; last row count: {rowCount}");
+
+                _mapBounds = new Vector2Int(rowWidth, lineCount);
+            } catch
+            {
+                Debug.LogError("Reading the map file didn't work; has the textasset reference deserialized yet?");
+            }
+        }
+
+        // editor only -- listener for triggering map reloads
+        public void FireFileChanged()
+        {
+            // TODO: cleanup / rearchitect in context of editor script check
+            if (_mapFile != _lastFile)
+            {
+                _lastFile = _mapFile;
+                
+                if (OnMapFileChanged != null)
+                {
+                    OnMapFileChanged();
                 } else
                 {
-                    // Debug.Log($"adding at {rowCount}, {lineCount}");
-
-                    Vector2Int coord = new Vector2Int(rowCount, lineCount);
-                    (Vector2Int, GameObject) pair; 
-
-                    if (!_charMap.ContainsKey(c))
-                    {
-                        pair = (coord, null);
-                    } else
-                    {
-                        pair = (coord, _charMap[c].Prefab);
-                    }
-
-                    _spawnGrid.Add(pair);
-
-                    rowCount++; 
-                    totalCount++; 
+                    Debug.LogWarning("Event handler OnMapFileChanged is null");
                 }
+                
             }
-
-            // last line won't have a trailing whitespace
-            // so manually increment
-            lineCount++; 
-
-            int rowWidth = totalCount / (lineCount);
-
-            // Debug.Log($"calc: {rowWidth} x {lineCount}; total: {totalCount}; last row count: {rowCount}");
-
-            _mapBounds = new Vector2Int(rowWidth, lineCount);
         }
     }
 }

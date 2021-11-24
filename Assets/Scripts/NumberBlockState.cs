@@ -48,8 +48,9 @@ namespace Alex.BoardGame
         {
             if (!_uvUpdater)
             {
-                Debug.LogWarning("UV updater is missing");
+                // Debug.LogWarning("UV updater is missing");
                 _uvUpdater = GetComponentInChildren<BlockUVUpdater>();
+                _uvUpdater.AtlasReference = DigitsToAtlasKeys[_digit];
             } else
             {
                 _uvUpdater.AtlasReference = DigitsToAtlasKeys[_digit]; 

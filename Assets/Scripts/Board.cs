@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Alex.BoardGame {
-
+    [ExecuteAlways]
     [RequireComponent(typeof(MapGenHelper))]
     public class Board : MonoBehaviour
     {
         int _width;
         int _height;
+
+        Queue<GameObject> _tileObjectPool; 
 
         public Vector3 Origin
         {
@@ -28,6 +30,9 @@ namespace Alex.BoardGame {
             }
         }
 
+        [SerializeField]
+        [Tooltip("Dangerous: make sure is unticked when you build your project")]
+        bool _showBoardWhenNotActive = true;
 
         [SerializeField]
         float _tileWidth = 1f;
@@ -37,7 +42,6 @@ namespace Alex.BoardGame {
             get { return _tileWidth; }
         }
 
-        [SerializeField]
         MapGenHelper _mapGenHelper; 
 
         public int Width { 
@@ -71,12 +75,45 @@ namespace Alex.BoardGame {
             return SpawnEntity(position, _prefabList.GetPrefab(name));
         }
 
+        void RegisterEntityDespawn(TileEntity tile)
+        {
+            tile.OnDespawn -= RegisterEntityDespawn; 
+
+            if (_entities != null && _entities.Contains(tile))
+            {
+                _entities.Remove(tile);
+            }
+        }
+
         public TileEntity SpawnEntity(Vector2Int position, GameObject entity)
         {
-            var inst = Instantiate(entity);
+            if (_tileObjectPool == null)
+            {
+                _tileObjectPool = new Queue<GameObject>();
+            }
+
+            GameObject inst;
+
+            if (_tileObjectPool.Count < 1)
+            {
+
+#if UNITY_EDITOR
+                inst = UnityEditor.PrefabUtility.InstantiatePrefab(entity) as GameObject;
+#else
+            inst = Instantiate(entity);
+#endif
+            } else
+            {
+                inst = _tileObjectPool.Dequeue();
+            }
+
+            // TODO: pooling is tricky because tile objects don't necessarily have common children
+            // come back to this 
+
             var tile = inst.GetComponent<TileEntity>();
 
-            tile.OnDespawn += () => _entities.Remove(tile);
+            tile.OnDespawn += RegisterEntityDespawn; 
+
             tile.ParentBoard = this;
 
             // ensure instantly snaps to spawn position
@@ -96,19 +133,74 @@ namespace Alex.BoardGame {
             return tile; 
         }
 
-        // Start is called before the first frame update
-        void Awake()
+        public void SpawnBoard()
         {
             _entities = new HashSet<TileEntity>();
 
-            // configures map helper
-            OnValidate();
-
             foreach (var pair in _mapGenHelper.SpawnGrid)
             {
-                SpawnEntity(pair.Item1, pair.Item2);
+                SpawnEntity(pair.Position, pair.Tile);
             }
 
+            Debug.Log("Spawned board pieces.");
+        }
+
+        public void HardDespawn()
+        {
+            // destroy not just listed entities but all children of transform 
+            while (transform.childCount > 0)
+            {
+                var c = transform.GetChild(0).gameObject;
+
+                if (Application.isEditor)
+                {
+                    DestroyImmediate(c);
+                }
+                else
+                {
+                    Destroy(c);
+                }
+            }
+        }
+
+        void DespawnBoard()
+        {
+            Debug.Log("Starting board despawn");
+
+            if (_entities != null)
+            {
+                List<TileEntity> list = new List<TileEntity>(_entities);
+
+                for (int i = 0; i < list.Count; i++)
+                {
+                    if (Application.isEditor)
+                    {
+                        DestroyImmediate(list[i].gameObject);
+                    }
+                    else
+                    {
+                        Destroy(list[i].gameObject);
+                    }
+                }
+
+                _entities.Clear();
+
+                Debug.Log("Despawned board pieces.");
+            } else
+            {
+                Debug.LogWarning("spawnlist was null, nothing to despawn");
+            }
+        }
+
+        // Start is called before the first frame update
+        void Awake()
+        {
+            HardDespawn();
+        }
+
+        public Vector3 BoardToWorld(Vector2Int pos)
+        {
+            return BoardToWorld(pos.x, pos.y); 
         }
 
         public Vector3 BoardToWorld(int x, int y)
@@ -138,12 +230,12 @@ namespace Alex.BoardGame {
             Gizmos.DrawWireCube(Origin, BoardBounds.size);
 
 #if UNITY_EDITOR
-            var color = new Color(1, 0.8f, 0.4f, 1);
+            var color = new Color(1, 0.8f, 0.4f, 0.5f);
             UnityEditor.Handles.color = color;
 
             // display object "value" in scene
             GUI.color = color;
-            UnityEditor.Handles.Label(Origin, gameObject.name);
+            // UnityEditor.Handles.Label(Origin, gameObject.name);
 
             // vertical lines
             for (int i = 1; i < _width; i++)
@@ -173,8 +265,26 @@ namespace Alex.BoardGame {
                 UnityEditor.Handles.DrawDottedLine(left, right, 2);
             }
 
+            // label the tiles
+            if (_mapGenHelper.SpawnGrid != null && !_showBoardWhenNotActive)
+            {
+                foreach (var pair in _mapGenHelper.SpawnGrid)
+                {
+                    GUI.color = color;
+                    UnityEditor.Handles.Label(BoardToWorld(pair.Position) - new Vector3(_tileWidth / 4, 0, _tileWidth / -4), pair.Tile.name.Split(' ')[0].Substring(0, 4));
+                }
+            }
+
 #endif
         }
+
+        /*private void Awake()
+        {
+            if (_mapGenHelper == null)
+            {
+                _mapGenHelper = GetComponent<MapGenHelper>();
+            }
+        }*/
 
         // Update is called once per frame
         void Update()
@@ -182,11 +292,30 @@ namespace Alex.BoardGame {
 
         }
 
-        void OnValidate()
+        /*private void OnValidate()
         {
-            _mapGenHelper = GetComponent<MapGenHelper>();
+            TriggerMapGen();
+        }*/
 
-            _mapGenHelper.TriggerOnValidate();
+        void ValidateMapGenHelper()
+        {
+            if (!_mapGenHelper)
+            {
+                _mapGenHelper = GetComponent<MapGenHelper>();
+            }
+
+            // check the null delegate
+            if (_mapGenHelper.OnMapFileChanged == null)
+            {
+                _mapGenHelper.OnMapFileChanged += ReloadBoard;
+            }
+        }
+
+        void TriggerMapGen()
+        {
+            ValidateMapGenHelper();
+
+            _mapGenHelper.TriggerInitGenHelper();
 
             _width = _mapGenHelper.MapBounds.x;
             _height = _mapGenHelper.MapBounds.y;
@@ -195,30 +324,67 @@ namespace Alex.BoardGame {
             GetComponent<MapGenHelper>().PrefabMap = _prefabList;
         }
 
+        void ReloadBoard()
+        {
+            DespawnBoard();
+            TriggerMapGen();
+            
+            if (!Application.isEditor || _showBoardWhenNotActive)
+            {
+                SpawnBoard();
+            }
+            
+        }
+
 #if UNITY_EDITOR
         void OnEnable()
         {
-            OnValidate();
-
+            ReloadBoard(); 
             UnityEditor.EditorApplication.playModeStateChanged += ReactToPlayMode;
         }
 
         void OnDisable()
         {
+            DespawnBoard();
             UnityEditor.EditorApplication.playModeStateChanged -= ReactToPlayMode;
         }
 
         // makes sure the gizmos draw when you exit play mode in the editor
         void ReactToPlayMode(UnityEditor.PlayModeStateChange stateChange)
         {
-            if (stateChange == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+            if (stateChange == UnityEditor.PlayModeStateChange.ExitingEditMode)
             {
-                OnValidate();
-                Debug.Log("exiting playmode");
+                DespawnBoard();
+                Debug.Log("entering play mode");
+            }
+            else if (stateChange == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+            {
+                Debug.Log("exited playmode");
+                // ReloadBoard();
             }
         }
 
-        
+        // can't do this with simple OnValidate because
+        // of contraints on when Destroy / DestroyImmediate 
+        // can be called in editor
+        public void CheckBoardReload()
+        {
+            if (_showBoardWhenNotActive)
+            {
+                SpawnBoard();
+            } else
+            {
+                DespawnBoard();
+            }
+        }
+#else
+        void OnEnable() {
+            ReloadBoard();
+        }
+
+        void OnDisable() {
+            DespawnBoard(); 
+        }
 #endif
     }
 }
