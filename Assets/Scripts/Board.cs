@@ -148,18 +148,40 @@ namespace Alex.BoardGame {
         public void HardDespawn()
         {
             // destroy not just listed entities but all children of transform 
-            while (transform.childCount > 0)
-            {
-                var c = transform.GetChild(0).gameObject;
+            // this only works with destroy immediate: while (transform.childCount > 0)
 
-                if (Application.isEditor)
+            // also apparently DestroyImmediate works in play mode without throwing errors? 
+
+            // hacky, need to refactor
+
+            if (transform.childCount > 0) {
+
+                Transform child = transform.GetChild(0);
+
+                while (child != null)
                 {
-                    DestroyImmediate(c);
-                }
-                else
-                {
-                    Destroy(c);
-                }
+                    var go = child.gameObject;
+
+                    /*if (Application.isEditor)
+                    {
+                        DestroyImmediate(go);
+                    }
+                    else
+                    {
+                        Destroy(go);
+                    }*/
+
+                    DestroyImmediate(go);
+
+                    try
+                    {
+                        child = transform.GetChild(0);
+                    }
+                    catch
+                    {
+                        child = null; 
+                    }
+                } 
             }
         }
 
