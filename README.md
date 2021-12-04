@@ -8,6 +8,10 @@ Uses a couple of free placeholder assets which I need to get around to properly 
 ---
 
 # Known issues: 
+---
+
+
+# Solved issues:
 
 [1382261](https://fogbugz.unity3d.com/default.asp?1382261_gj5dnp0g3nv5ijmf)
 > Player build hangs on blank screen after reporting UnloadTime; memory leak proceeds to eat up all system memory til crash.
