@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq; 
 
 namespace Alex.BoardGame {
     [ExecuteAlways]
@@ -10,7 +11,10 @@ namespace Alex.BoardGame {
         int _width;
         int _height;
 
-        Queue<GameObject> _tileObjectPool; 
+        Queue<GameObject> _tileObjectPool;
+
+        Dictionary<Vector2Int, HashSet<TileEntity>> _hashedEntityCoords; 
+
 
         public Vector3 Origin
         {
@@ -31,7 +35,6 @@ namespace Alex.BoardGame {
         }
 
         [SerializeField]
-        [Tooltip("Dangerous: make sure is unticked when you build your project")]
         bool _showBoardWhenNotActive = true;
 
         [SerializeField]
@@ -70,23 +73,71 @@ namespace Alex.BoardGame {
         [SerializeField]
         AddressableDictionary _prefabList; 
         
+
+        public List<TileEntity> GetTilesAtPosition(Vector2Int pos) {
+            
+            if (_hashedEntityCoords != null && _hashedEntityCoords.ContainsKey(pos) && _hashedEntityCoords[pos].Count > 0)
+            {
+                return new List<TileEntity>(_hashedEntityCoords[pos]);
+            }
+
+            Debug.Log($"no tiles registered at position {pos.x}, {pos.y}"); 
+            
+            return null; 
+        }
+
+
         public TileEntity SpawnEntity(Vector2Int position, string name)
         {
             return SpawnEntity(position, _prefabList.GetPrefab(name));
         }
 
+        // callback for when a tile is destroyed
+
         void RegisterEntityDespawn(TileEntity tile)
         {
-            tile.OnDespawn -= RegisterEntityDespawn; 
+            tile.OnDespawn -= RegisterEntityDespawn;
+            tile.OnPositionUpdate -= RegisterNewEntityCoord;
 
             if (_entities != null && _entities.Contains(tile))
             {
                 _entities.Remove(tile);
             }
+
+            if (_hashedEntityCoords != null && _hashedEntityCoords.ContainsKey(tile.BoardPosition))
+            {
+                _hashedEntityCoords[tile.BoardPosition].Remove(tile); 
+            }
+        }
+
+        // callback used to keep coordinate hash synchronized 
+        void RegisterNewEntityCoord(Vector2Int newPos, Vector2Int oldPos, TileEntity tile)
+        {
+            if (_hashedEntityCoords == null)
+            {
+                _hashedEntityCoords = new Dictionary<Vector2Int, HashSet<TileEntity>>(); 
+            }
+
+            if (_hashedEntityCoords.ContainsKey(oldPos))
+            {
+                _hashedEntityCoords[oldPos].Remove(tile);
+            }
+
+            if (!_hashedEntityCoords.ContainsKey(newPos))
+            {
+                _hashedEntityCoords[newPos] = new HashSet<TileEntity>(); 
+            }
+
+            _hashedEntityCoords[newPos].Add(tile); 
         }
 
         public TileEntity SpawnEntity(Vector2Int position, GameObject entity)
         {
+            if (entity == null)
+            {
+                return null; 
+            }
+
             if (_tileObjectPool == null)
             {
                 _tileObjectPool = new Queue<GameObject>();
@@ -112,7 +163,8 @@ namespace Alex.BoardGame {
 
             var tile = inst.GetComponent<TileEntity>();
 
-            tile.OnDespawn += RegisterEntityDespawn; 
+            tile.OnDespawn += RegisterEntityDespawn;
+            tile.OnPositionUpdate += RegisterNewEntityCoord;
 
             tile.ParentBoard = this;
 
@@ -126,7 +178,7 @@ namespace Alex.BoardGame {
 
             tile.ShouldTween = cachedTweenSetting;
 
-            tile.transform.parent = transform; 
+            tile.transform.parent = transform;
 
             _entities.Add(tile);
 
@@ -136,6 +188,8 @@ namespace Alex.BoardGame {
         public void SpawnBoard()
         {
             _entities = new HashSet<TileEntity>();
+
+            _hashedEntityCoords = new Dictionary<Vector2Int, HashSet<TileEntity>>(); 
 
             foreach (var pair in _mapGenHelper.SpawnGrid)
             {
@@ -245,6 +299,12 @@ namespace Alex.BoardGame {
             return new Vector2Int(boardX, boardY);
         }
 
+        public bool IsPositionObstructed(Vector2Int pos)
+        {
+            var tiles = GetTilesAtPosition(pos);
+
+            return tiles == null || tiles.Count == 0 || tiles.Where(t => t.IsObstruction).ToList().Count > 0;
+        }
 
         void OnDrawGizmos()
         {

@@ -9,7 +9,19 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 612219671764135381, guid: c00128fcb127cd3499a4aa5eb86f870c, type: 3}
       propertyPath: _atlasReference
-      value: Numb_0
+      value: Numb_1
+      objectReference: {fileID: 0}
+    - target: {fileID: 993026270206498255, guid: c00128fcb127cd3499a4aa5eb86f870c, type: 3}
+      propertyPath: _myType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 993026270206498255, guid: c00128fcb127cd3499a4aa5eb86f870c, type: 3}
+      propertyPath: _isStatic
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 993026270206498255, guid: c00128fcb127cd3499a4aa5eb86f870c, type: 3}
+      propertyPath: _isInteractable
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1149501495973532412, guid: c00128fcb127cd3499a4aa5eb86f870c, type: 3}
       propertyPath: m_RootOrder
@@ -66,6 +78,18 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 5333631476790120719, guid: c00128fcb127cd3499a4aa5eb86f870c, type: 3}
   m_PrefabInstance: {fileID: 3829488314961551869}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &886009748517348537
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9160830462487179506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a5d63321212c15429060e8051e3af6c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &2851639289574833903
 MonoBehaviour:
   m_ObjectHideFlags: 0

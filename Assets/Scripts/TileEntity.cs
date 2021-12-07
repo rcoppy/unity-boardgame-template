@@ -26,6 +26,12 @@ namespace Alex.BoardGame
         [SerializeField]
         EntityType _myType; 
 
+        public enum InteractionType
+        {
+            Generic, 
+            Movement
+        }
+
         public EntityType MyType
         {
             get { return _myType; }
@@ -40,6 +46,16 @@ namespace Alex.BoardGame
         bool _isAlive = true;
 
         public bool IsAlive { get { return _isAlive; } }
+
+        [SerializeField]
+        bool _isObstruction = true;
+
+        public bool IsObstruction { get { return _isObstruction; } }
+
+        [SerializeField]
+        bool _isInteractable = false;
+
+        public bool IsInteractable { get { return _isInteractable; } }
 
         Vector2Int _boardPosition; 
 
@@ -61,16 +77,22 @@ namespace Alex.BoardGame
                 var oldPos = _boardPosition; 
                 _boardPosition = value;
 
-                OnPositionUpdate(value, oldPos); 
+                OnPositionUpdate(value, oldPos, this); 
             } 
         }
 
         public Board ParentBoard; 
 
-        public delegate void PositionUpdate(Vector2Int newPos, Vector2Int oldPos);
-        public PositionUpdate OnPositionUpdate; 
+        public delegate void PositionUpdate(Vector2Int newPos, Vector2Int oldPos, TileEntity tile);
+        public PositionUpdate OnPositionUpdate;
 
-        void UpdateWorldTransform(Vector2Int newPos, Vector2Int oldPos) 
+        public delegate void NotifyOfNewOccupant(TileEntity occupant);
+        public NotifyOfNewOccupant OnNotifyOfNewOccupant;
+
+        public delegate void TriggerInteraction(TileEntity actor, TileEntity receiver, InteractionType interaction);
+        public TriggerInteraction OnTriggerInteraction; 
+
+        void UpdateWorldTransform(Vector2Int newPos, Vector2Int oldPos, TileEntity tile) 
         {
             // TODO: Add tweening? 
             if (_shouldTween)

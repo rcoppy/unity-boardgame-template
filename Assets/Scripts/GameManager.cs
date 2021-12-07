@@ -79,35 +79,98 @@ namespace Alex.BoardGame
             // jank tile selection
             if (Input.GetMouseButtonDown(0))
             {
+                var coords = ScreenCoordToBoardCoord(Input.mousePosition); 
                 
-                Vector3 mousePos = Input.mousePosition;
-                mousePos.z = _camera.nearClipPlane; 
-
-                var projection = _camera.ScreenToWorldPoint(mousePos) - _camera.transform.position;
-
-                // can calculate distance to plane intersection
-                Vector3 l0 = _camera.transform.position;
-                Vector3 l = projection.normalized;
-                Vector3 p0 = _board.Origin;
-                Vector3 n = _board.transform.up;
-
-                float denominator = Vector3.Dot(l, n); 
-
-                if (denominator != 0)
+                if (coords != null)
                 {
-                    float d = Vector3.Dot(p0 - l0, n) / denominator;
+                    _activePlayer.BoardPosition = (Vector2Int)coords;
+                }
+                
+            }
 
-                    Vector3 worldBoardPoint = l0 + d * l;
+            // jank keyboard controls
 
-                    Vector2Int clickCoords = _board.WorldToBoard(worldBoardPoint);
+            Vector2Int keyContribution = Vector2Int.zero;
+            
+            if (Input.GetKeyDown("left"))
+            {
+                keyContribution = Vector2Int.left;
+            } else if (Input.GetKeyDown("right"))
+            {
+                keyContribution = Vector2Int.right; 
+            } else if (Input.GetKeyDown("up"))
+            {
+                // board coords are inverted relative to world coords
+                keyContribution = Vector2Int.down; 
+            } else if (Input.GetKeyDown("down"))
+            {
+                keyContribution = Vector2Int.up; 
+            }
 
-                    Debug.Log($"Click registered at {worldBoardPoint}: {clickCoords}");
+            if (keyContribution != Vector2Int.zero)
+            {
+                // check if movement is valid
 
-                    _activePlayer.BoardPosition = clickCoords; 
+                var targetPos = _activePlayer.BoardPosition + keyContribution;
 
+                var tiles = _board.GetTilesAtPosition(targetPos);
 
+                if (tiles != null && !_board.IsPositionObstructed(targetPos))
+                {
+                    // position unobstructed, move player there
+                    var here = _board.BoardToWorld(_activePlayer.BoardPosition);
+                    var there = _board.BoardToWorld(targetPos);
+
+                    // TODO: player rotation in motion direction
+                    // _activePlayer.transform.rotation *= Quaternion.FromToRotation(here, there);
+  
+                    _activePlayer.BoardPosition = targetPos;
+
+                    // Debug.LogWarning("should work");
+
+                    foreach (var t in tiles)
+                    {
+                        t.OnNotifyOfNewOccupant?.Invoke(_activePlayer);
+                    }
+                } else if (tiles != null)
+                {
+                    foreach (var t in tiles.Where(t => t.IsInteractable))
+                    {
+                        t.OnTriggerInteraction?.Invoke(_activePlayer, t, TileEntity.InteractionType.Movement);  
+                    } 
                 }
             }
+        }
+
+        Vector2Int? ScreenCoordToBoardCoord(Vector3 screenCoord)
+        {
+            Vector3 mousePos = screenCoord;
+            mousePos.z = _camera.nearClipPlane;
+
+            var projection = _camera.ScreenToWorldPoint(mousePos) - _camera.transform.position;
+
+            // can calculate distance to plane intersection
+            Vector3 l0 = _camera.transform.position;
+            Vector3 l = projection.normalized;
+            Vector3 p0 = _board.Origin;
+            Vector3 n = _board.transform.up;
+
+            float denominator = Vector3.Dot(l, n);
+
+            if (denominator != 0)
+            {
+                float d = Vector3.Dot(p0 - l0, n) / denominator;
+
+                Vector3 worldBoardPoint = l0 + d * l;
+
+                return _board.WorldToBoard(worldBoardPoint);
+
+                // Debug.Log($"Click registered at {worldBoardPoint}: {clickCoords}");
+
+                // _activePlayer.BoardPosition = clickCoords
+            }
+
+            return null; 
         }
 
         void OnDrawGizmos()
